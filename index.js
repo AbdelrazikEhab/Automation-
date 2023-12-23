@@ -1,4 +1,5 @@
 const express = require("express");
+const axios = require("axios");
 const app = express();
 const port = 3000;
 
@@ -8,6 +9,51 @@ const zmq = require("zeromq");
 // Call sell and buy
 const performBuyOperation = require("./performBuyOperation");
 const performSellOperation = require("./performSellOperation");
+
+// Function to fetch indicators from TradingView API
+async function fetchIndicators() {
+  try {
+    const symbol = "AAPL"; // Replace with the symbol or trading pair you are interested in
+    const resolution = "D"; // Replace with the desired resolution (e.g., D for daily, 1H for hourly, etc.)
+
+    const apiKey = "YOUR_API_KEY"; // Replace with your TradingView API key
+
+    const endpoint = `https://api.example.com/indicators?symbol=${symbol}&resolution=${resolution}&apikey=${apiKey}`;
+    // Process the response and extract indicator values
+    const indicators = endpoint.data;
+    // Implement your logic to extract specific indicator values from the response
+
+    // Perform trading operations based on indicators
+    performTradingOperations(indicators);
+  } catch (error) {
+    console.error(
+      "Error fetching indicators from TradingView API:",
+      error.message
+    );
+  }
+}
+
+// Function to perform trading operations based on indicators
+function performTradingOperations(indicators) {
+  // Implement your trading strategy based on the indicators
+  // Generate buy/sell signals and execute orders accordingly
+
+  // Example trading strategy: Buy when indicator value is above a certain threshold, sell when below
+  const indicatorValue = indicators.someIndicator; // Replace with the actual indicator value based on your data structure
+  const buyThreshold = 0.8; // Replace with your desired buy threshold value
+  const sellThreshold = 0.2; // Replace with your desired sell threshold value
+
+  if (indicatorValue > buyThreshold) {
+    // Buy signal
+    console.log("Buy signal detected");
+    performBuyOperation(symbol, volume); // Replace with the appropriate symbol and volume
+  } else if (indicatorValue < sellThreshold) {
+    // Sell signal
+    console.log("Sell signal detected");
+    performSellOperation(symbol, volume); // Replace with the appropriate symbol and volume
+  }
+}
+
 // API endpoint for receiving requests from MetaTrader
 app.get("/api/placeOrder", async (req, res) => {
   // Extract parameters from the request
@@ -47,14 +93,6 @@ app.get("/api/placeOrder", async (req, res) => {
 
     if (parsedResponse.success) {
       console.log(`Order placed successfully: ${parsedResponse.message}`);
-
-      // Perform buy or sell operation based on order type
-      if (orderType === "buy") {
-        performBuyOperation(symbol, volume);
-      } else if (orderType === "sell") {
-        performSellOperation(symbol, volume);
-      }
-
       res.send("Order placed successfully");
     } else {
       console.log(`Failed to place order: ${parsedResponse.error}`);
@@ -72,4 +110,7 @@ app.get("/api/placeOrder", async (req, res) => {
 // Start the server
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
+
+  // Fetch indicators from TradingView API periodically
+  setInterval(fetchIndicators, 5000); // Adjust the interval as needed
 });
