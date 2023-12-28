@@ -1,73 +1,64 @@
-import json
 import websocket
-import threading
+import MetaTrader5 as mt5
 
 def on_message(ws, message):
-    print('Received message:', message)
-    data = json.loads(message)
+    # Process the received message
+    print("Received message:", message)
 
-    if 'm' in data and 'supertrend' in data['m']:
-        supertrend_data = data['m']['supertrend']
+    # Check if the message contains a buy or sell signal
+    if "BUY_SIGNAL" in message:
+        # Execute a buy order
+        order = mt5.order_send(
+            symbol="XAUUSD",
+            action=mt5.ORDER_TYPE_BUY,
+            volume=0.01,
+            slippage=3,
+            type=mt5.ORDER_TYPE_MARKET,
+            magic=123456,
+            comment="Buy order"
+        )
+        if order.retcode != mt5.TRADE_RETCODE_DONE:
+            print("Failed to execute buy order")
 
-        for item in supertrend_data:
-            signal_type = item['type']
-            signal_price = item['p']
-            timestamp = item['time']
-
-            if signal_type == 'buy':
-                print(f'Buy signal at {signal_price} (timestamp: {timestamp})')
-            elif signal_type == 'sell':
-                print(f'Sell signal at {signal_price} (timestamp: {timestamp})')
+    elif "SELL_SIGNAL" in message:
+        # Execute a sell order
+        order = mt5.order_send(
+            symbol="XAUUSD",
+            action=mt5.ORDER_TYPE_SELL,
+            volume=0.01,
+            slippage=3,
+            type=mt5.ORDER_TYPE_MARKET,
+            magic=123456,
+            comment="Sell order"
+        )
+        if order.retcode != mt5.TRADE_RETCODE_DONE:
+            print("Failed to execute sell order")
 
 def on_error(ws, error):
-    print('WebSocket error:', error)
+    # Handle any errors that occur
+    print("Error:", error)
 
 def on_close(ws):
-    print('WebSocket connection closed')
+    # Perform cleanup tasks when the connection is closed
+    print("Connection closed")
 
-# Define the WebSocket URL for the XAU/USD symbol
-symbol = 'XAUUSD'
-url = 'wss://data.tradingview.com/socket.io/websocket?symbol={symbol}'
+def on_open(ws):
+    # Subscribe to the TradingView alert
+    ws.send('{"action": "subscribe", "symbol": "XAUUSD", "alert": "YOUR_ALERT_NAME"}')
 
-# Connect to the WebSocket API
-ws = websocket.WebSocketApp(url,
-                            on_message=on_message,
-                            on_error=on_error,
-                            on_close=on_close)
+# Initialize MetaTrader 5 library
+mt5.initialize()
+server = "EXNESS_SERVER"  # Replace with the appropriate server name provided by EXNESS
+login = 12345678  # Replace with your MT5 login
+password = "YOUR_PASSWORD"  # Replace with your MT5 password
 
-# Authenticate with TradingView (replace with your TradingView username and password)
-auth_payload = {
-    'action': 'auth',
-    'params': {
-         'login': 'bitcoin027@gmail.com',
-        'password': 'bitcoin027@123'
-    }
-}
+# Connect to the MT5 server
+mt5.login(login, password, server=server)
 
-def send_auth_payload():
-    ws.send(json.dumps(auth_payload))
+# Create a websocket connection
+websocket.enableTrace(True)
+ws = websocket.WebSocketApp("wss://data.tradingview.com/socket.io/websocket", on_message=on_message, on_error=on_error, on_close=on_close)
+ws.on_open = on_open
 
-# Subscribe to the Supertrend indicator updates for the XAU/USD symbol
-subscribe_payload = {
-    'action': 'subscribe',
-    'params': {
-        'symbol': symbol,
-        'interval': '1',  # Time interval (1 minute)
-        'supertrend': 'true'
-    }
-}
-
-def send_subscribe_payload():
-    ws.send(json.dumps(subscribe_payload))
-
-# Start a separate thread to run the WebSocket connection
-ws_thread = threading.Thread(target=ws.run_forever)
-ws_thread.start()
-
-# Authenticate and subscribe after a short delay to ensure the connection is established
-# Adjust the delay time as needed (in seconds)
-auth_timer = threading.Timer(5, send_auth_payload)
-subscribe_timer = threading.Timer(7, send_subscribe_payload)
-
-auth_timer.start()
-subscribe_timer.start()
+# Start the websocket connection
+ws.run_forever()
