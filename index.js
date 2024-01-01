@@ -2,6 +2,7 @@ const express = require("express");
 const axios = require("axios");
 
 const app = express();
+const baseUrl = "https://tradingnow.com"; // Set the base URL
 
 // TradingView API key
 const tvApiKey = "Uox0zM24";
@@ -20,7 +21,7 @@ app.get("/signal", async (req, res) => {
 
   try {
     // Place order via broker API
-    await axios.post("https://broker-api.com/orders", {
+    await axios.post(`${baseUrl}/orders`, {
       symbol,
       signal,
     });

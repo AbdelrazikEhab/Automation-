@@ -1,47 +1,33 @@
-from flask import Flask, request, jsonify
-import MetaTrader5 as mt5
+from flask import Flask, request
 
 app = Flask(__name__)
 
-# MetaTrader 5 login credentials
-login = "123"
-password = "abc"
-server = "Broker Server"
+# Route to receive TradingView webhook alerts
+@app.route("/webhook", methods=["POST"])
+def handle_webhook():
+    data = request.json
 
-@app.route('/', methods=['POST'])
-def receive_signal():
+    # Extract signal parameters
+    symbol = data["symbol"]
+    signal = data["signal"]
 
-    # Initialize MetaTrader 5
-    mt5.initialize()
-    mt5.login(login, password, server=server)
+    # Process the signal
+    if signal == "buy":
+        place_buy_order(symbol)
+    elif signal == "sell":
+        place_sell_order(symbol)
+    else:
+        return "Invalid signal"
 
-    # Parse signal data
-    data = request.get_json()
-    signal = data['signal']
+    return "Signal received and processed"
 
-    if signal == "BUY":
-        place_order(mt5.ORDER_TYPE_BUY)
-    elif signal == "SELL": 
-        place_order(mt5.ORDER_TYPE_SELL)
+def place_buy_order(symbol):
+    # Logic to place a buy order
+    print(f"Placing buy order for symbol: {symbol}")
 
-    # Return success response
-    return jsonify({"status": "Order placed"}), 200
+def place_sell_order(symbol):
+    # Logic to place a sell order
+    print(f"Placing sell order for symbol: {symbol}")
 
-def place_order(action):
-
-    # Place order
-    order = mt5.order_send(
-        symbol="EURUSD",
-        volume=0.1, 
-        type=mt5.ORDER_TYPE_MARKET,
-        action=action  
-    )  
-
-    # Check for errors  
-    if order.retcode != mt5.TRADE_RETCODE_DONE:
-        print("Order failed")
-       
-if __name__ == '__main__':
-
-    # Run Flask app
-    app.run(host='0.0.0.0', port=5000)
+if __name__ == "__main__":
+    app.run(port=80)
