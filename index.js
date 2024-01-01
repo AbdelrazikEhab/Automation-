@@ -1,73 +1,36 @@
 const express = require("express");
-const TradingView = require("tradingview-api-adapter");
-const zmq = require("zeromq");
+const axios = require("axios");
 
 const app = express();
-const port = 3000;
 
-// Create ZeroMQ socket
-const zmqSocket = zmq.socket("push");
-const endpoint = "tcp://127.0.0.1:5555"; // Replace with the actual ZeroMQ endpoint
-console.log(Replace);
+// TradingView API key
+const tvApiKey = "Uox0zM24";
 
-// Function to fetch indicators from TradingView using tradingview-api-adapter
-async function fetchIndicators(symbol, exchange) {
+// Route to receive signal via GET
+app.get("/signal", async (req, res) => {
+  // Authenticate request
+  const apiKey = req.query.api_key;
+  if (apiKey !== tvApiKey) {
+    return res.status(401).send("Unauthorized");
+  }
+
+  // Parse signal parameters
+  const symbol = req.query.symbol;
+  const signal = req.query.signal;
+
   try {
-    const adapter = new TradingView();
+    // Place order via broker API
+    await axios.post("https://broker-api.com/orders", {
+      symbol,
+      signal,
+    });
 
-    adapter
-      .Quote(`${exchange}:${symbol}`, ["lp", "ch", "chp"])
-      .listen((data) => {
-        console.log("Last price: ", data.lp);
-        console.log("Price change: ", data.ch);
-        console.log("Price change in percent: ", data.chp);
-
-        // Perform trading operations and send response to MQL5
-        const decision = makeTradingDecision(data);
-        sendResponseToMQL5(decision);
-      });
+    res.send("Order placed");
   } catch (error) {
-    console.error("Error fetching indicators from TradingView:", error.message);
+    res.status(500).send(error);
   }
-}
-
-// Function to make trading decision based on indicator data
-function makeTradingDecision(data) {
-  const lastPrice = data.lp;
-  const priceChange = data.ch;
-  const priceChangePercent = data.chp;
-
-  // Implement your trading strategy based on the indicator data
-  if (priceChange > 0 && priceChangePercent > 0) {
-    return "buy";
-  } else if (priceChange < 0 && priceChangePercent < 0) {
-    return "sell";
-  } else {
-    return "hold";
-  }
-}
-
-// Function to send trading decision response to MQL5 using ZeroMQ
-function sendResponseToMQL5(decision) {
-  zmqSocket.send(decision);
-  console.log("Response sent to MQL5:", decision);
-}
-
-// API endpoint for fetching indicators and making trading decision
-app.post("/trading-decision/:symbol/:exchange", (req, res) => {
-  const symbol = req.params.symbol;
-  const exchange = req.params.exchange;
-
-  if (!symbol || !exchange) {
-    res.status(400).send("Symbol and exchange are required.");
-    return;
-  }
-
-  fetchIndicators(symbol, exchange);
-  res.send("Trading decision process started");
 });
 
-// Start the Express server
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+app.listen(80, () => {
+  console.log("Listening on port 80");
 });

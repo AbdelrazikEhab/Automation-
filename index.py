@@ -1,64 +1,47 @@
-import websocket
+from flask import Flask, request, jsonify
 import MetaTrader5 as mt5
 
-def on_message(ws, message):
-    # Process the received message
-    print("Received message:", message)
+app = Flask(__name__)
 
-    # Check if the message contains a buy or sell signal
-    if "BUY_SIGNAL" in message:
-        # Execute a buy order
-        order = mt5.order_send(
-            symbol="XAUUSD",
-            action=mt5.ORDER_TYPE_BUY,
-            volume=0.01,
-            slippage=3,
-            type=mt5.ORDER_TYPE_MARKET,
-            magic=123456,
-            comment="Buy order"
-        )
-        if order.retcode != mt5.TRADE_RETCODE_DONE:
-            print("Failed to execute buy order")
+# MetaTrader 5 login credentials
+login = "123"
+password = "abc"
+server = "Broker Server"
 
-    elif "SELL_SIGNAL" in message:
-        # Execute a sell order
-        order = mt5.order_send(
-            symbol="XAUUSD",
-            action=mt5.ORDER_TYPE_SELL,
-            volume=0.01,
-            slippage=3,
-            type=mt5.ORDER_TYPE_MARKET,
-            magic=123456,
-            comment="Sell order"
-        )
-        if order.retcode != mt5.TRADE_RETCODE_DONE:
-            print("Failed to execute sell order")
+@app.route('/', methods=['POST'])
+def receive_signal():
 
-def on_error(ws, error):
-    # Handle any errors that occur
-    print("Error:", error)
+    # Initialize MetaTrader 5
+    mt5.initialize()
+    mt5.login(login, password, server=server)
 
-def on_close(ws):
-    # Perform cleanup tasks when the connection is closed
-    print("Connection closed")
+    # Parse signal data
+    data = request.get_json()
+    signal = data['signal']
 
-def on_open(ws):
-    # Subscribe to the TradingView alert
-    ws.send('{"action": "subscribe", "symbol": "XAUUSD", "alert": "YOUR_ALERT_NAME"}')
+    if signal == "BUY":
+        place_order(mt5.ORDER_TYPE_BUY)
+    elif signal == "SELL": 
+        place_order(mt5.ORDER_TYPE_SELL)
 
-# Initialize MetaTrader 5 library
-mt5.initialize()
-server = "EXNESS_SERVER"  # Replace with the appropriate server name provided by EXNESS
-login = 12345678  # Replace with your MT5 login
-password = "YOUR_PASSWORD"  # Replace with your MT5 password
+    # Return success response
+    return jsonify({"status": "Order placed"}), 200
 
-# Connect to the MT5 server
-mt5.login(login, password, server=server)
+def place_order(action):
 
-# Create a websocket connection
-websocket.enableTrace(True)
-ws = websocket.WebSocketApp("wss://data.tradingview.com/socket.io/websocket", on_message=on_message, on_error=on_error, on_close=on_close)
-ws.on_open = on_open
+    # Place order
+    order = mt5.order_send(
+        symbol="EURUSD",
+        volume=0.1, 
+        type=mt5.ORDER_TYPE_MARKET,
+        action=action  
+    )  
 
-# Start the websocket connection
-ws.run_forever()
+    # Check for errors  
+    if order.retcode != mt5.TRADE_RETCODE_DONE:
+        print("Order failed")
+       
+if __name__ == '__main__':
+
+    # Run Flask app
+    app.run(host='0.0.0.0', port=5000)
