@@ -2,36 +2,48 @@ const express = require("express");
 const axios = require("axios");
 
 const app = express();
-const baseUrl = "https://automationontradingview.onrender.com"; // Set the base URL
+const baseUrl = "https://automationontradingview.onrender.com";
 
-// TradingView API key
-const tvApiKey = "Uox0zM24";
+app.use(express.json());
 
-// Route to receive signal via GET
-app.get("/signal", async (req, res) => {
-  // Authenticate request
-  const apiKey = req.query.api_key;
-  if (apiKey !== tvApiKey) {
-    return res.status(401).send("Unauthorized");
-  }
-
-  // Parse signal parameters
-  const symbol = req.query.symbol;
-  const signal = req.query.signal;
-
+// Route to receive signals via POST
+app.post("/webhook", async (req, res) => {
   try {
-    // Place order via broker API
-    await axios.post(`${baseUrl}/api/accounts/${tvApiKey}/orders`, {
-      symbol,
+    // Extract signal information from the request body
+    const signal = req.query.signal;
+    const symbol = req.query.symbol;
+
+    // Perform processing or validation on the signal data
+    if (signal !== "buy" && signal !== "sell") {
+      return res.status(400).send("Invalid signal");
+    }
+
+    // Perform symbol validation
+    if (!isValidSymbol(symbol)) {
+      return res.status(400).send("Invalid symbol");
+    }
+
+    // Send the signal to the desired destination
+    await axios.post(`${baseUrl}/api/signal`, {
       signal,
+      symbol,
     });
 
-    res.send("Order placed");
+    res.sendStatus(200);
   } catch (error) {
-    res.status(500).send(error);
+    console.error("Error:", error.message);
+    res.sendStatus(500);
   }
 });
 
-app.listen(80, () => {
-  console.log("Listening on port 80");
+// Symbol validation function
+function isValidSymbol(symbol) {
+  // Add your symbol validation logic here
+  // Example: Check if the symbol exists in a predefined list or matches a specific format
+  const symbolList = ["AAPL", "GOOGL", "MSFT", "AMZN", "TSLA", "XAUUSD"];
+  return symbolList.includes(symbol);
+}
+
+app.listen(3000, () => {
+  console.log("Server is running on port 3000");
 });
