@@ -21,7 +21,7 @@ app.get("/signal", async (req, res) => {
 
   try {
     // Place order via broker API
-    await axios.post(`${baseUrl}/orders`, {
+    await axios.post(`${baseUrl}/api/accounts/${tvApiKey}/orders`, {
       symbol,
       signal,
     });
