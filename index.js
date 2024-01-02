@@ -2,7 +2,7 @@ const express = require("express");
 const axios = require("axios");
 
 const app = express();
-const baseUrl = "https://tradingnow.com"; // Set the base URL
+const baseUrl = "https://automationontradingview.onrender.com"; // Set the base URL
 
 // TradingView API key
 const tvApiKey = "Uox0zM24";
