@@ -62,7 +62,7 @@ app.post("/webhook", (req, res) => {
   res.send({ action: action, signal: signal }).status(200); // Send a success response to TradingView
 });
 
-const port = process.env.PORT || 80; // Set the desired port number
+const port = process.env.PORT || 443; // Set the desired port number
 app.listen(port, () => {
   console.log(`API server listening on port ${port}`);
 });
