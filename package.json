@@ -12,6 +12,7 @@
     "axios": "^1.6.3",
     "express": "^4.18.2",
     "tradingview-api-adapter": "^1.2.2",
+    "ws": "^8.16.0",
     "zeromq": "^6.0.0-beta.19",
     "zeromq-ng": "^5.0.0-beta.28"
   }

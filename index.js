@@ -1,49 +1,55 @@
 const express = require("express");
-const axios = require("axios");
+const bodyParser = require("body-parser");
+const WebSocket = require("ws");
+
+const baseUrl = "https://automationontradingview.onrender.com"; // Replace with your desired base URL
 
 const app = express();
-const baseUrl = "https://automationontradingview.onrender.com";
+app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use(express.json());
+// Placeholder function for handling buy signals
+function handleBuySignal(signal) {
+  // Perform automated actions for buy signals
+  console.log("Received buy signal:", signal);
+  // Example actions: Execute a trade, send a notification, etc.
 
-// Route to receive signals via POST
-app.post("/webhook", async (req, res) => {
-  try {
-    // Extract signal information from the request body
-    const signal = req.query.signal;
-    const symbol = req.query.symbol;
-
-    // Perform processing or validation on the signal data
-    if (signal !== "buy" && signal !== "sell") {
-      return res.status(400).send("Invalid signal");
-    }
-
-    // Perform symbol validation
-    if (!isValidSymbol(symbol)) {
-      return res.status(400).send("Invalid symbol");
-    }
-
-    // Send the signal to the desired destination
-    await axios.post(`${baseUrl}/api/signal`, {
-      signal,
-      symbol,
-    });
-
-    res.sendStatus(200);
-  } catch (error) {
-    console.error("Error:", error.message);
-    res.sendStatus(500);
-  }
-});
-
-// Symbol validation function
-function isValidSymbol(symbol) {
-  // Add your symbol validation logic here
-  // Example: Check if the symbol exists in a predefined list or matches a specific format
-  const symbolList = ["AAPL", "GOOGL", "MSFT", "AMZN", "TSLA", "XAUUSD"];
-  return symbolList.includes(symbol);
+  // Send the buy signal to MQL5 script
+  sendSignalToMQL5("buy", signal);
 }
 
-app.listen(3000, () => {
-  console.log("Server is running on port 3000");
+// Placeholder function for handling sell signals
+function handleSellSignal(signal) {
+  // Perform automated actions for sell signals
+  console.log("Received sell signal:", signal);
+  // Example actions: Close a trade, send a notification, etc.
+
+  // Send the sell signal to MQL5 script
+  sendSignalToMQL5("sell", signal);
+}
+
+// WebSocket client for sending signals to MQL5 script
+const ws = new WebSocket(`ws://${baseUrl}`); // Replace with the appropriate WebSocket URL
+
+// Function to send signals to MQL5 script
+function sendSignalToMQL5(action, signal) {
+  const data = JSON.stringify({ action, signal });
+  ws.send(data);
+}
+
+app.get("/webhook", (req, res) => {
+  const { action, signal } = req.query; // Extract the action and signal from the URL parameters
+
+  // Process the signal
+  if (action === "buy") {
+    handleBuySignal(signal);
+  } else if (action === "sell") {
+    handleSellSignal(signal);
+  }
+
+  res.sendStatus(200); // Send a success response to TradingView
+});
+
+const port = 3000; // Set the desired port number
+app.listen(port, () => {
+  console.log(`API server listening on port ${port}`);
 });
