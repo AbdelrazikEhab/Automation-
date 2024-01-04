@@ -1,9 +1,9 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const WebSocket = require("ws");
+const dotenv = require("dotenv");
 
-const baseUrl = "https://automationontradingview.onrender.com"; // Replace with your desired base URL
-
+dotenv.config();
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -13,22 +13,22 @@ function handleBuySignal(signal) {
   console.log("Received buy signal:", signal);
   // Example actions: Execute a trade, send a notification, etc.
 
-  // Send the buy signal to MQL5 script
-  sendSignalToMQL5("buy", signal);
+  // Replace the code below with your broker/trading platform integration logic
+  executeBuyOrder(signal);
 }
 
 // Placeholder function for handling sell signals
 function handleSellSignal(signal) {
   // Perform automated actions for sell signals
   console.log("Received sell signal:", signal);
-  // Example actions: Close a trade, send a notification, etc.
+  // Example actions: Execute a trade, send a notification, etc.
 
-  // Send the sell signal to MQL5 script
-  sendSignalToMQL5("sell", signal);
+  // Replace the code below with your broker/trading platform integration logic
+  executeSellOrder(signal);
 }
 
 // WebSocket client for sending signals to MQL5 script
-const ws = new WebSocket(`ws://${baseUrl}`); // Replace with the appropriate WebSocket URL
+//const ws = new WebSocket(process.env.WEBSOCKET_URL); // Replace with the appropriate WebSocket URL
 
 // Function to send signals to MQL5 script
 function sendSignalToMQL5(action, signal) {
@@ -36,8 +36,21 @@ function sendSignalToMQL5(action, signal) {
   ws.send(data);
 }
 
-app.get("/webhook", (req, res) => {
-  const { action, signal } = req.query; // Extract the action and signal from the URL parameters
+// Example function for executing a buy order
+function executeBuyOrder(signal) {
+  // Replace this function with your broker/trading platform integration logic
+  console.log("Executing buy order:", signal);
+  // Example actions: Place a buy order using the signal information
+}
+
+// Example function for executing a sell order
+function executeSellOrder(signal) {
+  // Replace this function with your broker/trading platform integration logic
+  console.log("Executing sell order:", signal);
+  // Example actions: Place a sell order using the signal information
+}
+app.post("/webhook", (req, res) => {
+  const { action, signal } = req.body; // Extract the action and signal from the request body
 
   // Process the signal
   if (action === "buy") {
@@ -49,7 +62,7 @@ app.get("/webhook", (req, res) => {
   res.sendStatus(200); // Send a success response to TradingView
 });
 
-const port = 3000; // Set the desired port number
+const port = process.env.PORT || 80; // Set the desired port number
 app.listen(port, () => {
   console.log(`API server listening on port ${port}`);
 });
