@@ -59,7 +59,7 @@ app.post("/webhook", (req, res) => {
     handleSellSignal(signal);
   }
 
-  res.sendStatus(200); // Send a success response to TradingView
+  res.send({ action: action, signal: signal }).status(200); // Send a success response to TradingView
 });
 
 const port = process.env.PORT || 80; // Set the desired port number
